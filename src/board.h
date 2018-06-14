@@ -3,14 +3,15 @@
 
 #include <cstdint>
 
+#include "utility.h"
+
 namespace oroppas {
 namespace endgame {
 namespace board {
 
-int CountBits(uint64_t bits);
-
 inline int GetScore(uint64_t black, uint64_t white) {
-  return CountBits(black) - CountBits(white);
+  return oroppas::endgame::utility::CountBits(black) -
+         oroppas::endgame::utility::CountBits(white);
 }
 
 uint64_t GetMovableBitBoard(uint64_t black, uint64_t white);

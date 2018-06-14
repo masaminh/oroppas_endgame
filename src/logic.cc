@@ -3,12 +3,18 @@
 #include <algorithm>
 
 #include "board.h"
+#include "utility.h"
 
 namespace oroppas {
 namespace endgame {
 namespace logic {
 
 namespace board = oroppas::endgame::board;
+namespace utility = oroppas::endgame::utility;
+
+namespace {
+int ntz(uint64_t x) { return utility::CountBits((~x) & (x - 1)); }
+} // namespace
 
 int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
               Benchmark *benchmark) {
@@ -25,7 +31,7 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
 
   ++benchmark->internal;
   auto positions = board::GetMovableBitBoard(black, white);
-  for (auto i = 0; i < 64; ++i) {
+  for (auto i = ntz(positions); positions; ++i) {
     auto position = uint64_t{1} << i;
     if (positions & position) {
       auto newblack = black;
@@ -37,6 +43,8 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
       if (alpha >= beta) {
         return alpha;
       }
+
+      positions ^= position;
     }
   }
 
