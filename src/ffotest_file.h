@@ -12,12 +12,16 @@ public:
       : file_path_(file_path), black_(0), white_(0) {}
   bool Read();
 
+  ///
   /// 着手側のビットボードを取得する。
   /// @return ビットボード。最下位ビットから順にA1,B1…
+  ///
   inline uint64_t GetBlack() const { return black_; }
 
+  ///
   /// 相手側のビットボードを取得する。
   /// @return ビットボード。最下位ビットから順にA1,B1…
+  ///
   inline uint64_t GetWhite() const { return white_; }
 
 private:

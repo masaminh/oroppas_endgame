@@ -24,6 +24,10 @@ private:
   int n_;
 };
 
+///
+/// 反転用のビットパターンの取得
+/// @remark 参照 https://ja.wikipedia.org/wiki/オセロにおけるビットボード
+///
 uint64_t GetReversePattern(uint64_t mask, uint64_t m, uint64_t black,
                            uint64_t white,
                            std::function<uint64_t(uint64_t)> func) {
