@@ -13,6 +13,10 @@ namespace board = oroppas::endgame::board;
 namespace utility = oroppas::endgame::utility;
 
 namespace {
+///
+/// Number of Training Zero (NTZ)
+/// @remark 参考 http://www.nminoru.jp/~nminoru/programming/bitcount.html
+///
 int ntz(uint64_t x) { return utility::CountBits((~x) & (x - 1)); }
 } // namespace
 
