@@ -73,37 +73,97 @@ uint64_t GetReversePattern(uint64_t mask, uint64_t m, uint64_t black,
 }
 } // namespace
 
+///
+/// 着手可能位置のビットボードを取得する
+/// @param[in] black 着手側ビットボード
+/// @param[in] white 相手側ビットボード
+/// @return 着手可能位置
+/// @remark 参考 https://qiita.com/sensuikan1973/items/459b3e11d91f3cb37e43
+///
 uint64_t GetMovableBitBoard(uint64_t black, uint64_t white) {
-  uint64_t result = 0;
-  uint64_t m = 1;
-  uint64_t space_board = ~(black | white);
+  //左右端の番人
+  uint64_t horizontalWatchBoard = white & 0x7e7e7e7e7e7e7e7e;
+  //上下端の番人
+  uint64_t verticalWatchBoard = white & 0x00ffffffffffff00;
+  //全辺の番人
+  uint64_t allSideWatchBoard = white & 0x007e7e7e7e7e7e00;
+  //空きマスのみにビットが立っているボード
+  uint64_t blankBoard = ~(black | white);
 
-  for (auto i = 0; i < 64; ++i) {
-    if ((m & space_board) &&
-        (GetReversePattern(0x00ffffffffffff00, m, black, white,
-                           LeftShift(8)) || // 下方向
-         GetReversePattern(0x007e7e7e7e7e7e00, m, black, white,
-                           LeftShift(7)) || // 左下方向
-         GetReversePattern(0x7e7e7e7e7e7e7e7e, m, black, white,
-                           RightShift(1)) || // 左方向
-         GetReversePattern(0x007e7e7e7e7e7e00, m, black, white,
-                           RightShift(9)) || // 左上方向
-         GetReversePattern(0x00ffffffffffff00, m, black, white,
-                           RightShift(8)) || // 上方向
-         GetReversePattern(0x007e7e7e7e7e7e00, m, black, white,
-                           RightShift(7)) || // 右上方向
-         GetReversePattern(0x7e7e7e7e7e7e7e7e, m, black, white,
-                           LeftShift(1)) || // 右方向
-         GetReversePattern(0x007e7e7e7e7e7e00, m, black, white,
-                           LeftShift(9)))) // 右下方向
-    {
-      result |= m;
-    }
+  // 8方向チェック (・一度に返せる石は最大6つ ・高速化のためにforを展開)
+  //右
+  uint64_t tmp = horizontalWatchBoard & (black << 1);
+  tmp |= horizontalWatchBoard & (tmp << 1);
+  tmp |= horizontalWatchBoard & (tmp << 1);
+  tmp |= horizontalWatchBoard & (tmp << 1);
+  tmp |= horizontalWatchBoard & (tmp << 1);
+  tmp |= horizontalWatchBoard & (tmp << 1);
+  uint64_t legalBoard = blankBoard & (tmp << 1);
 
-    m <<= 1;
-  }
+  //左
+  tmp = horizontalWatchBoard & (black >> 1);
+  tmp |= horizontalWatchBoard & (tmp >> 1);
+  tmp |= horizontalWatchBoard & (tmp >> 1);
+  tmp |= horizontalWatchBoard & (tmp >> 1);
+  tmp |= horizontalWatchBoard & (tmp >> 1);
+  tmp |= horizontalWatchBoard & (tmp >> 1);
+  legalBoard |= blankBoard & (tmp >> 1);
 
-  return result;
+  //下
+  tmp = verticalWatchBoard & (black << 8);
+  tmp |= verticalWatchBoard & (tmp << 8);
+  tmp |= verticalWatchBoard & (tmp << 8);
+  tmp |= verticalWatchBoard & (tmp << 8);
+  tmp |= verticalWatchBoard & (tmp << 8);
+  tmp |= verticalWatchBoard & (tmp << 8);
+  legalBoard |= blankBoard & (tmp << 8);
+
+  //上
+  tmp = verticalWatchBoard & (black >> 8);
+  tmp |= verticalWatchBoard & (tmp >> 8);
+  tmp |= verticalWatchBoard & (tmp >> 8);
+  tmp |= verticalWatchBoard & (tmp >> 8);
+  tmp |= verticalWatchBoard & (tmp >> 8);
+  tmp |= verticalWatchBoard & (tmp >> 8);
+  legalBoard |= blankBoard & (tmp >> 8);
+
+  //左斜め下
+  tmp = allSideWatchBoard & (black << 7);
+  tmp |= allSideWatchBoard & (tmp << 7);
+  tmp |= allSideWatchBoard & (tmp << 7);
+  tmp |= allSideWatchBoard & (tmp << 7);
+  tmp |= allSideWatchBoard & (tmp << 7);
+  tmp |= allSideWatchBoard & (tmp << 7);
+  legalBoard |= blankBoard & (tmp << 7);
+
+  //右斜め下
+  tmp = allSideWatchBoard & (black << 9);
+  tmp |= allSideWatchBoard & (tmp << 9);
+  tmp |= allSideWatchBoard & (tmp << 9);
+  tmp |= allSideWatchBoard & (tmp << 9);
+  tmp |= allSideWatchBoard & (tmp << 9);
+  tmp |= allSideWatchBoard & (tmp << 9);
+  legalBoard |= blankBoard & (tmp << 9);
+
+  //左斜め上
+  tmp = allSideWatchBoard & (black >> 9);
+  tmp |= allSideWatchBoard & (tmp >> 9);
+  tmp |= allSideWatchBoard & (tmp >> 9);
+  tmp |= allSideWatchBoard & (tmp >> 9);
+  tmp |= allSideWatchBoard & (tmp >> 9);
+  tmp |= allSideWatchBoard & (tmp >> 9);
+  legalBoard |= blankBoard & (tmp >> 9);
+
+  //右斜め上
+  tmp = allSideWatchBoard & (black >> 7);
+  tmp |= allSideWatchBoard & (tmp >> 7);
+  tmp |= allSideWatchBoard & (tmp >> 7);
+  tmp |= allSideWatchBoard & (tmp >> 7);
+  tmp |= allSideWatchBoard & (tmp >> 7);
+  tmp |= allSideWatchBoard & (tmp >> 7);
+  legalBoard |= blankBoard & (tmp >> 7);
+
+  return legalBoard;
 }
 
 bool Move(uint64_t position, uint64_t *black, uint64_t *white) {
