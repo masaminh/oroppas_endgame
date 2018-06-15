@@ -20,9 +20,19 @@ namespace {
 int ntz(uint64_t x) { return utility::CountBits((~x) & (x - 1)); }
 } // namespace
 
+///
+/// αβ探索
+/// @param[in] black 着手側ビットボード
+/// @param[in] white 相手側ビットボード
+/// @param[in] alpha 対象とする下限値
+/// @param[in] beta 対象とする上限値
+/// @param[in,out] benchmark ベンチマーク用情報
+/// @return 評価値
+///
 int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
               Benchmark *benchmark) {
-  if (board::GetMovableBitBoard(black, white) == 0) {
+  auto positions = board::GetMovableBitBoard(black, white);
+  if (positions == 0) {
     if (board::GetMovableBitBoard(white, black) == 0) {
       // 双方が石を置けない
       ++benchmark->leaf;
@@ -34,7 +44,6 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
   }
 
   ++benchmark->internal;
-  auto positions = board::GetMovableBitBoard(black, white);
   for (auto i = ntz(positions); positions; ++i) {
     auto position = uint64_t{1} << i;
     if (positions & position) {
