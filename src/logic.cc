@@ -36,6 +36,16 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
   }
 
   ++benchmark->internal;
+
+  auto blank = ~(black | white);
+  if (utility::CountBits(blank) == 1) {
+    // 最後の1手のときは別処理
+    ++benchmark->leaf;
+    auto position = uint64_t{1} << utility::CountNTZ(blank);
+    board::Move(position, &black, &white);
+    return std::max(alpha, board::GetScore(black, white));
+  }
+
   for (auto i = utility::CountNTZ(positions); positions; ++i) {
     auto position = uint64_t{1} << i;
     if (positions & position) {
