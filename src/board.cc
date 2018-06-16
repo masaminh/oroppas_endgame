@@ -29,9 +29,8 @@ private:
 /// @remark 参照
 /// https://ja.wikipedia.org/w/index.php?title=%E3%82%AA%E3%82%BB%E3%83%AD%E3%81%AB%E3%81%8A%E3%81%91%E3%82%8B%E3%83%93%E3%83%83%E3%83%88%E3%83%9C%E3%83%BC%E3%83%89&oldid=48206803
 ///
-uint64_t GetReversePattern(uint64_t mask, uint64_t m, uint64_t black,
-                           uint64_t white,
-                           std::function<uint64_t(uint64_t)> func) {
+template <uint64_t mask, typename F>
+uint64_t GetReversePattern(uint64_t m, uint64_t black, uint64_t white, F func) {
   uint64_t rev = 0;
 
   if (((black | white) & m) != 0) { // 着手箇所が空白で無い場合
@@ -170,22 +169,22 @@ bool Move(uint64_t position, uint64_t *black, uint64_t *white) {
   bool rc;
   uint64_t rev = 0;
 
-  rev |= GetReversePattern(0x00ffffffffffff00, position, *black, *white,
-                           LeftShift(8)); // 下方向
-  rev |= GetReversePattern(0x007e7e7e7e7e7e00, position, *black, *white,
-                           LeftShift(7)); // 左下方向
-  rev |= GetReversePattern(0x7e7e7e7e7e7e7e7e, position, *black, *white,
-                           RightShift(1)); // 左方向
-  rev |= GetReversePattern(0x007e7e7e7e7e7e00, position, *black, *white,
-                           RightShift(9)); // 左上方向
-  rev |= GetReversePattern(0x00ffffffffffff00, position, *black, *white,
-                           RightShift(8)); // 上方向
-  rev |= GetReversePattern(0x007e7e7e7e7e7e00, position, *black, *white,
-                           RightShift(7)); // 右上方向
-  rev |= GetReversePattern(0x7e7e7e7e7e7e7e7e, position, *black, *white,
-                           LeftShift(1)); // 右方向
-  rev |= GetReversePattern(0x007e7e7e7e7e7e00, position, *black, *white,
-                           LeftShift(9)); // 右下方向
+  rev |= GetReversePattern<0x00ffffffffffff00>(position, *black, *white,
+                                               LeftShift(8)); // 下方向
+  rev |= GetReversePattern<0x007e7e7e7e7e7e00>(position, *black, *white,
+                                               LeftShift(7)); // 左下方向
+  rev |= GetReversePattern<0x7e7e7e7e7e7e7e7e>(position, *black, *white,
+                                               RightShift(1)); // 左方向
+  rev |= GetReversePattern<0x007e7e7e7e7e7e00>(position, *black, *white,
+                                               RightShift(9)); // 左上方向
+  rev |= GetReversePattern<0x00ffffffffffff00>(position, *black, *white,
+                                               RightShift(8)); // 上方向
+  rev |= GetReversePattern<0x007e7e7e7e7e7e00>(position, *black, *white,
+                                               RightShift(7)); // 右上方向
+  rev |= GetReversePattern<0x7e7e7e7e7e7e7e7e>(position, *black, *white,
+                                               LeftShift(1)); // 右方向
+  rev |= GetReversePattern<0x007e7e7e7e7e7e00>(position, *black, *white,
+                                               LeftShift(9)); // 右下方向
 
   if (rev) {
     *black |= position | rev;
