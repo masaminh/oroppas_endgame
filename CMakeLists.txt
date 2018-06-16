@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.2)
 project (ENDGAME)
 
 set(CMAKE_CXX_STANDARD 14)
+add_compile_options(-march=native)
 
 SET(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)

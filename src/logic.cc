@@ -12,14 +12,6 @@ namespace logic {
 namespace board = oroppas::endgame::board;
 namespace utility = oroppas::endgame::utility;
 
-namespace {
-///
-/// Number of Training Zero (NTZ)
-/// @remark 参考 http://www.nminoru.jp/~nminoru/programming/bitcount.html
-///
-int ntz(uint64_t x) { return utility::CountBits((~x) & (x - 1)); }
-} // namespace
-
 ///
 /// αβ探索
 /// @param[in] black 着手側ビットボード
@@ -44,7 +36,7 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
   }
 
   ++benchmark->internal;
-  for (auto i = ntz(positions); positions; ++i) {
+  for (auto i = utility::CountNTZ(positions); positions; ++i) {
     auto position = uint64_t{1} << i;
     if (positions & position) {
       auto newblack = black;
