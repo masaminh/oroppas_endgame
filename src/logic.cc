@@ -38,7 +38,8 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
   ++benchmark->internal;
 
   auto blank = ~(black | white);
-  if (utility::CountBits(blank) == 1) {
+  auto countBlank = utility::CountBits(blank);
+  if (countBlank == 1) {
     // 最後の1手のときは別処理
     ++benchmark->leaf;
     auto position = uint64_t{1} << utility::CountNTZ(blank);
@@ -46,20 +47,49 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
     return std::max(alpha, board::GetScore(black, white));
   }
 
+  // 相手の着手可能位置が少ない順にソートして走査対象の枝を減らす
+  struct ScoreTable {
+    uint64_t black;
+    uint64_t white;
+    int score;
+  };
+
+  ScoreTable score_table[60];
+  int score_table_size = 0;
+
   for (auto i = utility::CountNTZ(positions); positions; ++i) {
     auto position = uint64_t{1} << i;
     if (positions & position) {
-      auto newblack = black;
-      auto newwhite = white;
-      board::Move(position, &newblack, &newwhite);
-      alpha = std::max(
-          alpha, -alphabeta(newwhite, newblack, -beta, -alpha, benchmark));
-
-      if (alpha >= beta) {
-        return alpha;
-      }
-
+      ScoreTable *score = score_table + score_table_size;
+      score->black = black;
+      score->white = white;
+      board::Move(position, &score->black, &score->white);
+      ++score_table_size;
       positions ^= position;
+    }
+  }
+
+  // 最終盤までソートするとそのコストの方が遅くなるので、一定のところでソートは止めておく
+  if (score_table_size > 1 && countBlank > 4) {
+    for (auto i = 0; i < score_table_size; ++i) {
+      auto score = score_table + i;
+      score->score = utility::CountBits(
+          board::GetMovableBitBoard(score->white, score->black));
+    }
+
+    std::sort(score_table, score_table + score_table_size,
+              [](const ScoreTable &a, const ScoreTable &b) {
+                return a.score < b.score;
+              });
+  }
+
+  for (auto i = 0; i < score_table_size; ++i) {
+    const auto &e = score_table[i];
+    alpha =
+        std::max(alpha, -alphabeta(e.white, e.black, -beta, -alpha, benchmark));
+
+    if (alpha >= beta) {
+      return alpha;
     }
   }
 
