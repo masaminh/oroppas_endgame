@@ -2,7 +2,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include <board.h>
+#include "board.h"
 
 BOOST_AUTO_TEST_SUITE(board)
 

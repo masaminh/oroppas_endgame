@@ -6,7 +6,8 @@ add_compile_options(-march=native)
 
 SET(Boost_USE_STATIC_LIBS ON)
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
+
+include_directories(src/include ${Boost_INCLUDE_DIRS})
 
 add_subdirectory(src)
 if(NOT without-test)
