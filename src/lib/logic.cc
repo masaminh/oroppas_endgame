@@ -42,8 +42,7 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
   if (countBlank == 1) {
     // 最後の1手のときは別処理
     ++benchmark->leaf;
-    auto position = uint64_t{1} << utility::CountNTZ(blank);
-    board::Move(position, &black, &white);
+    board::Move(blank, &black, &white);
     return std::max(alpha, board::GetScore(black, white));
   }
 
@@ -57,16 +56,16 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
   ScoreTable score_table[60];
   int score_table_size = 0;
 
-  for (auto i = utility::CountNTZ(positions); positions; ++i) {
-    auto position = uint64_t{1} << i;
-    if (positions & position) {
-      ScoreTable *score = score_table + score_table_size;
-      score->black = black;
-      score->white = white;
-      board::Move(position, &score->black, &score->white);
-      ++score_table_size;
-      positions ^= position;
-    }
+  while (positions) {
+    auto position = uint64_t{1} << utility::CountNTZ(positions);
+
+    ScoreTable *score = score_table + score_table_size;
+    score->black = black;
+    score->white = white;
+    board::Move(position, &score->black, &score->white);
+    ++score_table_size;
+
+    positions ^= position;
   }
 
   // 最終盤までソートするとそのコストの方が遅くなるので、一定のところでソートは止めておく
@@ -95,6 +94,6 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
 
   return alpha;
 }
-} // namespace logic
-} // namespace endgame
-} // namespace oroppas
+}  // namespace logic
+}  // namespace endgame
+}  // namespace oroppas
