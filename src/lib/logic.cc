@@ -23,6 +23,23 @@ namespace utility = oroppas::endgame::utility;
 ///
 int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
               Benchmark *benchmark) {
+  auto blank = ~(black | white);
+  auto countBlank = utility::CountBits(blank);
+  if (countBlank == 1) {
+    // 最後の1手のときは別処理
+    ++benchmark->leaf;
+    if (board::Move(blank, &black, &white)) {
+      ++benchmark->internal;
+      return board::GetScore(black, white);
+    }
+    if (board::Move(blank, &white, &black)) {
+      ++benchmark->internal;
+      return -board::GetScore(white, black);
+    }
+
+    return board::GetScore(black, white);
+  }
+
   auto positions = board::GetMovableBitBoard(black, white);
   if (positions == 0) {
     if (board::GetMovableBitBoard(white, black) == 0) {
@@ -36,15 +53,6 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
   }
 
   ++benchmark->internal;
-
-  auto blank = ~(black | white);
-  auto countBlank = utility::CountBits(blank);
-  if (countBlank == 1) {
-    // 最後の1手のときは別処理
-    ++benchmark->leaf;
-    board::Move(blank, &black, &white);
-    return std::max(alpha, board::GetScore(black, white));
-  }
 
   // 相手の着手可能位置が少ない順にソートして走査対象の枝を減らす
   struct ScoreTable {
