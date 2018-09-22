@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     const auto int_max = std::numeric_limits<int>::max();
     logic::Benchmark benchmark;
     auto begin = chrono::high_resolution_clock::now();
-    auto result = logic::alphabeta(black, white, -int_max, int_max, &benchmark);
+    auto result = logic::GetScore(black, white, -int_max, int_max, &benchmark);
     auto end = chrono::high_resolution_clock::now();
     auto elapsed_time =
         chrono::duration_cast<chrono::milliseconds>(end - begin);

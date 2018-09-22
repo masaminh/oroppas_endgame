@@ -13,7 +13,7 @@ namespace board = oroppas::endgame::board;
 namespace utility = oroppas::endgame::utility;
 
 ///
-/// αβ探索 (最終盤用)
+/// 盤面からスコアを推測する (最終盤用)
 /// @param[in] black 着手側ビットボード
 /// @param[in] white 相手側ビットボード
 /// @param[in] alpha 対象とする下限値
@@ -21,8 +21,8 @@ namespace utility = oroppas::endgame::utility;
 /// @param[in,out] benchmark ベンチマーク用情報
 /// @return 評価値
 ///
-int alphabeta_leafside(uint64_t black, uint64_t white, int alpha, int beta,
-                       Benchmark *benchmark) {
+int GetScoreLeafside(uint64_t black, uint64_t white, int alpha, int beta,
+                     Benchmark *benchmark) {
   auto blank = ~(black | white);
   auto countBlank = utility::CountBits(blank);
   if (countBlank == 1) {
@@ -48,7 +48,7 @@ int alphabeta_leafside(uint64_t black, uint64_t white, int alpha, int beta,
       return board::GetScore(black, white);
     } else {
       // パス
-      return -alphabeta_leafside(white, black, -beta, -alpha, benchmark);
+      return -GetScoreLeafside(white, black, -beta, -alpha, benchmark);
     }
   }
 
@@ -62,7 +62,7 @@ int alphabeta_leafside(uint64_t black, uint64_t white, int alpha, int beta,
     board::Move(position, &newb, &neww);
 
     alpha = std::max(alpha,
-                     -alphabeta_leafside(neww, newb, -beta, -alpha, benchmark));
+                     -GetScoreLeafside(neww, newb, -beta, -alpha, benchmark));
 
     if (alpha >= beta) {
       return alpha;
@@ -75,7 +75,7 @@ int alphabeta_leafside(uint64_t black, uint64_t white, int alpha, int beta,
 }
 
 ///
-/// αβ探索
+/// 盤面からスコアを推測する
 /// @param[in] black 着手側ビットボード
 /// @param[in] white 相手側ビットボード
 /// @param[in] alpha 対象とする下限値
@@ -83,12 +83,12 @@ int alphabeta_leafside(uint64_t black, uint64_t white, int alpha, int beta,
 /// @param[in,out] benchmark ベンチマーク用情報
 /// @return 評価値
 ///
-int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
-              Benchmark *benchmark) {
+int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
+             Benchmark *benchmark) {
   auto blank = ~(black | white);
   auto countBlank = utility::CountBits(blank);
   if (countBlank <= 4) {
-    return alphabeta_leafside(black, white, alpha, beta, benchmark);
+    return GetScoreLeafside(black, white, alpha, beta, benchmark);
   }
 
   auto positions = board::GetMovableBitBoard(black, white);
@@ -99,7 +99,7 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
       return board::GetScore(black, white);
     } else {
       // パス
-      return -alphabeta(white, black, -beta, -alpha, benchmark);
+      return -GetScore(white, black, -beta, -alpha, benchmark);
     }
   }
 
@@ -140,17 +140,49 @@ int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
               });
   }
 
-  for (auto i = 0; i < score_table_size; ++i) {
-    const auto &e = score_table[i];
-    alpha =
-        std::max(alpha, -alphabeta(e.white, e.black, -beta, -alpha, benchmark));
+  const auto &e = score_table[0];
+  auto v = -GetScore(e.white, e.black, -beta, -alpha, benchmark);
+  auto max = v;
 
-    if (alpha >= beta) {
-      return alpha;
+  if (beta <= v) {
+    return v;
+  }
+
+  if (score_table_size > 1) {
+    if (alpha < v) {
+      alpha = v;
+    }
+
+    for (auto i = 1; i < score_table_size; ++i) {
+      const auto &e = score_table[i];
+      v = -GetScore(e.white, e.black, -alpha - 1, -alpha,
+                    benchmark);  // Null Window Search
+
+      if (beta <= v) {
+        return v;  // カット
+      }
+
+      if (alpha < v) {
+        alpha = v;
+        v = -GetScore(e.white, e.black, -beta, -alpha,
+                      benchmark);  // 通常の窓で再探索
+
+        if (beta <= v) {
+          return v;  // カット
+        }
+
+        if (alpha < v) {
+          alpha = v;
+        }
+      }
+
+      if (max < v) {
+        max = v;
+      }
     }
   }
 
-  return alpha;
+  return max;
 }
 }  // namespace logic
 }  // namespace endgame

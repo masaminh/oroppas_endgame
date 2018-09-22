@@ -12,9 +12,9 @@ struct Benchmark {
   int64_t leaf;
 };
 
-int alphabeta(uint64_t black, uint64_t white, int alpha, int beta,
-              Benchmark *benchmark);
-} // namespace logic
-} // namespace endgame
-} // namespace oroppas
+int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
+             Benchmark *benchmark);
+}  // namespace logic
+}  // namespace endgame
+}  // namespace oroppas
 #endif
