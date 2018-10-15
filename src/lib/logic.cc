@@ -14,6 +14,9 @@ namespace board = oroppas::endgame::board;
 namespace utility = oroppas::endgame::utility;
 
 namespace {
+/// @brief 最終盤用ロジックへの切り替えタイミング
+constexpr static auto kLeafsideBorder = 6;
+
 /// @brief 盤面からスコアを推測する (最終盤用)
 /// @param [in] black 着手側ビットボード
 /// @param [in] white 相手側ビットボード
@@ -80,7 +83,7 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
              TranspositionTable *table, Benchmark *benchmark) {
   auto blank = ~(black | white);
   auto countBlank = utility::CountBits(blank);
-  if (countBlank <= 4) {
+  if (countBlank <= kLeafsideBorder) {
     return GetScoreLeafside(black, white, alpha, beta, benchmark);
   }
 

@@ -25,7 +25,7 @@ static std::size_t get_hash(uint64_t board, const uint64_t *a, int color) {
 }
 }  // namespace
 
-TranspositionTable::TranspositionTable() : table(18'000'000) {}
+TranspositionTable::TranspositionTable() : table(6'000'000) {}
 
 const std::tuple<int, int> &TranspositionTable::find(uint64_t black,
                                                      uint64_t white) const {
