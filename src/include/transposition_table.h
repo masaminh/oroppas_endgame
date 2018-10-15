@@ -48,19 +48,12 @@ class TranspositionTable {
   /// @brief 置換表のハッシュ生成関数オブジェクト
   struct KeyHash {
     /// @brief コンストラクタ
-    KeyHash();
+    KeyHash() = default;
 
     /// @brief ()演算子
     /// @param [in] k キー
     /// @retval ハッシュ値
     std::size_t operator()(const key_t &k) const;
-
-   private:
-    /// @brief ハッシュ計算用テーブルサイズ
-    constexpr static std::size_t kHashArraySize = 2 * 8 * 256;
-
-    /// @brief ハッシュ計算用テーブル
-    std::array<uint64_t, kHashArraySize> hash_array_;
   };
 
   /// @brief 置換表本体
