@@ -29,8 +29,8 @@ TranspositionTable::TranspositionTable() : table(12'000'000) {}
 
 const std::tuple<int, int> &TranspositionTable::find(uint64_t black,
                                                      uint64_t white) const {
-  constexpr static auto kScoreMax = std::numeric_limits<int>::max();
-  constexpr static auto kNotFound = std::make_tuple(-kScoreMax, kScoreMax);
+  constexpr static auto kNotFound =
+      std::make_tuple(kScoreTypeMin, kScoreTypeMax);
 
   auto it = table.find(std::make_tuple(black, white));
   return it == table.end() ? kNotFound : std::get<1>(*it);

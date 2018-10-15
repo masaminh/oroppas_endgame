@@ -2,15 +2,23 @@
 #define OROPPAS_ENDGAME_LOGIC_H_
 
 #include <cstdint>
+
+#include "endgame.h"
 #include "transposition_table.h"
 
 namespace oroppas {
 namespace endgame {
 namespace logic {
+
+/// @brief ベンチマーク用構造体
 struct Benchmark {
   inline Benchmark() : internal(0), leaf(0) {}
-  int64_t internal;
-  int64_t leaf;
+
+  /// @brief 中間ノード数
+  uint64_t internal;
+
+  /// @brief 末端ノード数
+  uint64_t leaf;
 };
 
 /// @brief 盤面からスコアを推測する
@@ -21,7 +29,7 @@ struct Benchmark {
 /// @param [in,out] table 置換表
 /// @param [in,out] benchmark ベンチマーク用情報
 /// @return 評価値
-int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
+int GetScore(uint64_t black, uint64_t white, ScoreType alpha, ScoreType beta,
              TranspositionTable *table, Benchmark *benchmark);
 }  // namespace logic
 }  // namespace endgame

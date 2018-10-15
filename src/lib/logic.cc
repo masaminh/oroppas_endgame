@@ -25,8 +25,8 @@ constexpr static auto kLeafsideBorder = 6;
 /// @param [in,out] table 置換表
 /// @param [in,out] benchmark ベンチマーク用情報
 /// @return 評価値
-int GetScoreLeafside(uint64_t black, uint64_t white, int alpha, int beta,
-                     Benchmark *benchmark) {
+ScoreType GetScoreLeafside(uint64_t black, uint64_t white, ScoreType alpha,
+                           ScoreType beta, Benchmark *benchmark) {
   auto blank = ~(black | white);
   auto countBlank = utility::CountBits(blank);
   if (countBlank == 1) {
@@ -102,8 +102,8 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
   ++benchmark->internal;
 
   // 置換表から取得
-  int cached_min;
-  int cached_max;
+  ScoreType cached_min;
+  ScoreType cached_max;
   std::tie(cached_min, cached_max) = table->find(black, white);
   if (cached_max <= alpha) return cached_max;
   if (cached_min >= beta) return cached_min;
@@ -152,7 +152,7 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
   auto v = -GetScore(e.white, e.black, -beta, -a, table, benchmark);
 
   if (beta <= v) {
-    table->update(black, white, v, std::numeric_limits<int>::max());
+    table->update(black, white, v, kScoreTypeMax);
     return v;
   }
 
@@ -169,7 +169,7 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
                     benchmark);  // Null Window Search
 
       if (beta <= v) {
-        table->update(black, white, v, std::numeric_limits<int>::max());
+        table->update(black, white, v, kScoreTypeMax);
         return v;  // カット
       }
 
@@ -179,7 +179,7 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
                       benchmark);  // 通常の窓で再探索
 
         if (beta <= v) {
-          table->update(black, white, v, std::numeric_limits<int>::max());
+          table->update(black, white, v, kScoreTypeMax);
           return v;  // カット
         }
 
@@ -197,7 +197,7 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
   if (max > alpha) {
     table->update(black, white, max, max);
   } else {
-    table->update(black, white, -std::numeric_limits<int>::max(), max);
+    table->update(black, white, kScoreTypeMin, max);
   }
 
   return max;

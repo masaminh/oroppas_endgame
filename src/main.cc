@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "board.h"
+#include "endgame.h"
 #include "ffotest_file.h"
 #include "logic.h"
 #include "transposition_table.h"
@@ -37,6 +38,11 @@ std::string get_comma_double(double value) {
   return get_comma_int(int_value) + double_str;
 }
 
+/// @brief メイン関数
+/// @param [in] argc 引数数
+/// @param [in] argv 引数
+/// @retval 0 正常終了
+/// @retval それ以外 異常終了
 int main(int argc, char *argv[]) {
   for (auto i = 1; i < argc; ++i) {
     TranspositionTable table;
@@ -44,11 +50,11 @@ int main(int argc, char *argv[]) {
     file.Read();
     auto black = file.GetBlack();
     auto white = file.GetWhite();
-    const auto int_max = std::numeric_limits<int>::max();
     logic::Benchmark benchmark;
     auto begin = chrono::high_resolution_clock::now();
     auto result =
-        logic::GetScore(black, white, -int_max, int_max, &table, &benchmark);
+        logic::GetScore(black, white, oroppas::endgame::kScoreTypeMin,
+                        oroppas::endgame::kScoreTypeMax, &table, &benchmark);
     auto end = chrono::high_resolution_clock::now();
     auto elapsed_time =
         chrono::duration_cast<chrono::milliseconds>(end - begin);

@@ -6,6 +6,8 @@
 #include <tuple>
 #include <unordered_map>
 
+#include "endgame.h"
+
 namespace oroppas {
 namespace endgame {
 /// 置換表
@@ -30,7 +32,8 @@ class TranspositionTable {
   /// @param [in] white 相手側ビットボード
   /// @param [in] min 更新する最小値
   /// @param [in] max 更新する最大値
-  inline void update(uint64_t black, uint64_t white, int min, int max) {
+  inline void update(uint64_t black, uint64_t white, ScoreType min,
+                     ScoreType max) {
     table[std::make_tuple(black, white)] = std::make_tuple(min, max);
   }
 
@@ -61,7 +64,7 @@ class TranspositionTable {
   };
 
   /// @brief 置換表本体
-  std::unordered_map<key_t, std::tuple<int, int>, KeyHash> table;
+  std::unordered_map<key_t, std::tuple<ScoreType, ScoreType>, KeyHash> table;
 };  // namespace endgame
 }  // namespace endgame
 }  // namespace oroppas
