@@ -1,4 +1,5 @@
 #include "ffotest_file.h"
+
 #include <fstream>
 
 namespace oroppas {
@@ -13,7 +14,7 @@ bool FfoTestFile::Read() {
 
   char black_mark = 'X';
   char white_mark = 'O';
-  if (color_string == "White") {
+  if (color_string == "White\r" || color_string == "White to move\r") {
     std::swap(black_mark, white_mark);
   }
 
@@ -32,5 +33,5 @@ bool FfoTestFile::Read() {
 
   return true;
 }
-} // namespace endgame
-} // namespace oroppas
+}  // namespace endgame
+}  // namespace oroppas
