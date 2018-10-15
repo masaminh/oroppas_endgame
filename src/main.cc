@@ -10,8 +10,10 @@
 #include "board.h"
 #include "ffotest_file.h"
 #include "logic.h"
+#include "transposition_table.h"
 
 using oroppas::endgame::FfoTestFile;
+using oroppas::endgame::TranspositionTable;
 namespace chrono = std::chrono;
 namespace board = oroppas::endgame::board;
 namespace logic = oroppas::endgame::logic;
@@ -37,6 +39,7 @@ std::string get_comma_double(double value) {
 
 int main(int argc, char *argv[]) {
   for (auto i = 1; i < argc; ++i) {
+    TranspositionTable table;
     FfoTestFile file(argv[i]);
     file.Read();
     auto black = file.GetBlack();
@@ -44,7 +47,8 @@ int main(int argc, char *argv[]) {
     const auto int_max = std::numeric_limits<int>::max();
     logic::Benchmark benchmark;
     auto begin = chrono::high_resolution_clock::now();
-    auto result = logic::GetScore(black, white, -int_max, int_max, &benchmark);
+    auto result =
+        logic::GetScore(black, white, -int_max, int_max, &table, &benchmark);
     auto end = chrono::high_resolution_clock::now();
     auto elapsed_time =
         chrono::duration_cast<chrono::milliseconds>(end - begin);
@@ -54,7 +58,8 @@ int main(int argc, char *argv[]) {
               << get_comma_int(benchmark.internal) << "|"
               << get_comma_int(benchmark.leaf) << "|" << get_comma_int(total)
               << "|" << get_comma_double(elapsed / 1000) << "|"
-              << get_comma_double(total / elapsed) << "|" << std::endl;
+              << get_comma_double(total / elapsed) << "|"
+              << get_comma_int(table.size()) << "|" << std::endl;
   }
 
   return 0;

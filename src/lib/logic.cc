@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "board.h"
+#include "transposition_table.h"
 #include "utility.h"
 
 namespace oroppas {
@@ -12,15 +13,15 @@ namespace logic {
 namespace board = oroppas::endgame::board;
 namespace utility = oroppas::endgame::utility;
 
-///
-/// 盤面からスコアを推測する (最終盤用)
-/// @param[in] black 着手側ビットボード
-/// @param[in] white 相手側ビットボード
-/// @param[in] alpha 対象とする下限値
-/// @param[in] beta 対象とする上限値
-/// @param[in,out] benchmark ベンチマーク用情報
+namespace {
+/// @brief 盤面からスコアを推測する (最終盤用)
+/// @param [in] black 着手側ビットボード
+/// @param [in] white 相手側ビットボード
+/// @param [in] alpha 対象とする下限値
+/// @param [in] beta 対象とする上限値
+/// @param [in,out] table 置換表
+/// @param [in,out] benchmark ベンチマーク用情報
 /// @return 評価値
-///
 int GetScoreLeafside(uint64_t black, uint64_t white, int alpha, int beta,
                      Benchmark *benchmark) {
   auto blank = ~(black | white);
@@ -73,18 +74,10 @@ int GetScoreLeafside(uint64_t black, uint64_t white, int alpha, int beta,
 
   return alpha;
 }
+}  // namespace
 
-///
-/// 盤面からスコアを推測する
-/// @param[in] black 着手側ビットボード
-/// @param[in] white 相手側ビットボード
-/// @param[in] alpha 対象とする下限値
-/// @param[in] beta 対象とする上限値
-/// @param[in,out] benchmark ベンチマーク用情報
-/// @return 評価値
-///
 int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
-             Benchmark *benchmark) {
+             TranspositionTable *table, Benchmark *benchmark) {
   auto blank = ~(black | white);
   auto countBlank = utility::CountBits(blank);
   if (countBlank <= 4) {
@@ -99,11 +92,22 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
       return board::GetScore(black, white);
     } else {
       // パス
-      return -GetScore(white, black, -beta, -alpha, benchmark);
+      return -GetScore(white, black, -beta, -alpha, table, benchmark);
     }
   }
 
   ++benchmark->internal;
+
+  // 置換表から取得
+  int cached_min;
+  int cached_max;
+  std::tie(cached_min, cached_max) = table->find(black, white);
+  if (cached_max <= alpha) return cached_max;
+  if (cached_min >= beta) return cached_min;
+  if (cached_max == cached_min) return cached_max;
+
+  if (alpha < cached_min) alpha = cached_min;
+  if (beta > cached_max) beta = cached_max;
 
   // 相手の着手可能位置が少ない順にソートして走査対象の枝を減らす
   struct ScoreTable {
@@ -141,38 +145,43 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
   }
 
   const auto &e = score_table[0];
-  auto v = -GetScore(e.white, e.black, -beta, -alpha, benchmark);
-  auto max = v;
+  auto a = alpha;
+  auto v = -GetScore(e.white, e.black, -beta, -a, table, benchmark);
 
   if (beta <= v) {
+    table->update(black, white, v, std::numeric_limits<int>::max());
     return v;
   }
 
+  auto max = v;
+
   if (score_table_size > 1) {
-    if (alpha < v) {
-      alpha = v;
+    if (a < v) {
+      a = v;
     }
 
     for (auto i = 1; i < score_table_size; ++i) {
       const auto &e = score_table[i];
-      v = -GetScore(e.white, e.black, -alpha - 1, -alpha,
+      v = -GetScore(e.white, e.black, -a - 1, -a, table,
                     benchmark);  // Null Window Search
 
       if (beta <= v) {
+        table->update(black, white, v, std::numeric_limits<int>::max());
         return v;  // カット
       }
 
-      if (alpha < v) {
-        alpha = v;
-        v = -GetScore(e.white, e.black, -beta, -alpha,
+      if (a < v) {
+        a = v;
+        v = -GetScore(e.white, e.black, -beta, -a, table,
                       benchmark);  // 通常の窓で再探索
 
         if (beta <= v) {
+          table->update(black, white, v, std::numeric_limits<int>::max());
           return v;  // カット
         }
 
-        if (alpha < v) {
-          alpha = v;
+        if (a < v) {
+          a = v;
         }
       }
 
@@ -180,6 +189,12 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
         max = v;
       }
     }
+  }
+
+  if (max > alpha) {
+    table->update(black, white, max, max);
+  } else {
+    table->update(black, white, -std::numeric_limits<int>::max(), max);
   }
 
   return max;
