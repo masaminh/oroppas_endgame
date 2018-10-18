@@ -81,6 +81,19 @@ ScoreType GetScoreLeafside(uint64_t black, uint64_t white, ScoreType alpha,
 
 int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
              TranspositionTable *table, Benchmark *benchmark) {
+  // 置換表から取得
+  ScoreType cached_min;
+  ScoreType cached_max;
+  std::tie(cached_min, cached_max) = table->find(black, white);
+  if (cached_max <= alpha) return cached_max;
+  if (cached_min >= beta) return cached_min;
+  if (cached_max == cached_min) return cached_max;
+
+  ++benchmark->internal;
+
+  if (alpha < cached_min) alpha = cached_min;
+  if (beta > cached_max) beta = cached_max;
+
   auto blank = ~(black | white);
   auto countBlank = utility::CountBits(blank);
   if (countBlank <= kLeafsideBorder) {
@@ -89,6 +102,7 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
 
   auto positions = board::GetMovableBitBoard(black, white);
   if (positions == 0) {
+    --benchmark->internal;
     if (board::GetMovableBitBoard(white, black) == 0) {
       // 双方が石を置けない
       ++benchmark->leaf;
@@ -98,19 +112,6 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
       return -GetScore(white, black, -beta, -alpha, table, benchmark);
     }
   }
-
-  ++benchmark->internal;
-
-  // 置換表から取得
-  ScoreType cached_min;
-  ScoreType cached_max;
-  std::tie(cached_min, cached_max) = table->find(black, white);
-  if (cached_max <= alpha) return cached_max;
-  if (cached_min >= beta) return cached_min;
-  if (cached_max == cached_min) return cached_max;
-
-  if (alpha < cached_min) alpha = cached_min;
-  if (beta > cached_max) beta = cached_max;
 
   // 相手の着手可能位置が少ない順にソートして走査対象の枝を減らす
   struct ScoreTable {
@@ -147,49 +148,41 @@ int GetScore(uint64_t black, uint64_t white, int alpha, int beta,
               });
   }
 
-  const auto &e = score_table[0];
   auto a = alpha;
-  auto v = -GetScore(e.white, e.black, -beta, -a, table, benchmark);
+  auto max = kScoreTypeMin;
+  auto not_first = false;
 
-  if (beta <= v) {
-    table->update(black, white, v, kScoreTypeMax);
-    return v;
-  }
+  for (auto i = 0; i < score_table_size; ++i) {
+    const auto &e = score_table[i];
+    ScoreType v;
 
-  auto max = v;
+    if (not_first) {
+      // Null Window Search
+      v = -GetScore(e.white, e.black, -a - 1, -a, table, benchmark);
 
-  if (score_table_size > 1) {
-    if (a < v) {
-      a = v;
+      if (a < v && v < beta) {
+        v = -GetScore(e.white, e.black, -beta, -v, table, benchmark);
+      }
+    } else {
+      // 通常の窓で再探索
+      v = -GetScore(e.white, e.black, -beta, -a, table, benchmark);
     }
 
-    for (auto i = 1; i < score_table_size; ++i) {
-      const auto &e = score_table[i];
-      v = -GetScore(e.white, e.black, -a - 1, -a, table,
-                    benchmark);  // Null Window Search
+    if (v >= beta) {
+      // カット
+      table->update(black, white, v, kScoreTypeMax);
+      return v;
+    }
 
-      if (beta <= v) {
-        table->update(black, white, v, kScoreTypeMax);
-        return v;  // カット
-      }
+    if (v > max) {
+      max = v;
 
       if (a < v) {
         a = v;
-        v = -GetScore(e.white, e.black, -beta, -a, table,
-                      benchmark);  // 通常の窓で再探索
-
-        if (beta <= v) {
-          table->update(black, white, v, kScoreTypeMax);
-          return v;  // カット
-        }
-
-        if (a < v) {
-          a = v;
-        }
       }
 
-      if (max < v) {
-        max = v;
+      if (v > alpha) {
+        not_first = true;
       }
     }
   }
